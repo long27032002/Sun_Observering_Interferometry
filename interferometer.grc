@@ -1,0 +1,808 @@
+options:
+  parameters:
+    author: Nguyen Nhu Hai Long
+    catch_exceptions: 'True'
+    category: '[GRC Hier Blocks]'
+    cmake_opt: ''
+    comment: ''
+    copyright: '@Nguyen Nhu Hai Long'
+    description: ''
+    gen_cmake: 'On'
+    gen_linking: dynamic
+    generate_options: no_gui
+    hier_block_src_path: '.:'
+    id: Interferometer
+    max_nouts: '0'
+    output_language: python
+    placement: (0,0)
+    qt_qss_theme: ''
+    realtime_scheduling: ''
+    run: 'True'
+    run_command: '{python} -u {filename}'
+    run_options: run
+    sizing_mode: fixed
+    thread_safe_setters: ''
+    title: Interferometer
+    window_size: (1000,1000)
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [8, 8]
+    rotation: 0
+    state: enabled
+
+blocks:
+- name: Datetime
+  id: variable
+  parameters:
+    comment: ''
+    value: datetime.now().strftime("%Y_%m_%d")
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [640, 128.0]
+    rotation: 0
+    state: true
+- name: Frequency
+  id: variable
+  parameters:
+    comment: ''
+    value: '610000000'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [400, 24.0]
+    rotation: 0
+    state: enabled
+- name: Sample
+  id: variable
+  parameters:
+    comment: ''
+    value: '2000000'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [528, 24.0]
+    rotation: 0
+    state: enabled
+- name: Vector_length
+  id: variable
+  parameters:
+    comment: ''
+    value: '512'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [248, 24.0]
+    rotation: 0
+    state: enabled
+- name: path
+  id: variable
+  parameters:
+    comment: ''
+    value: '"/home"'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [656, 24.0]
+    rotation: 0
+    state: enabled
+- name: timenow
+  id: variable
+  parameters:
+    comment: ''
+    value: datetime.now().strftime("%Y_%m_%d_%H_%M_%S")
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [408, 128.0]
+    rotation: 0
+    state: true
+- name: blocks_complex_to_mag_squared_0
+  id: blocks_complex_to_mag_squared
+  parameters:
+    affinity: ''
+    alias: ''
+    comment: ''
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    vlen: Vector_length
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [488, 432.0]
+    rotation: 0
+    state: true
+- name: blocks_moving_average_xx_0
+  id: blocks_moving_average_xx
+  parameters:
+    affinity: ''
+    alias: ''
+    comment: ''
+    length: '100'
+    max_iter: '500'
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    scale: 1/100
+    type: float
+    vlen: Vector_length
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [664, 268.0]
+    rotation: 0
+    state: true
+- name: blocks_nlog10_ff_0
+  id: blocks_nlog10_ff
+  parameters:
+    affinity: ''
+    alias: ''
+    comment: ''
+    k: '0'
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    n: '10'
+    vlen: Vector_length
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [872, 428.0]
+    rotation: 0
+    state: true
+- name: blocks_stream_to_vector_0
+  id: blocks_stream_to_vector
+  parameters:
+    affinity: ''
+    alias: ''
+    comment: ''
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    num_items: Vector_length
+    type: complex
+    vlen: '1'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [400, 288.0]
+    rotation: 0
+    state: true
+- name: epy_block_0
+  id: epy_block
+  parameters:
+    _source_code: "\"\"\"\nEmbedded Python Blocks:\n\nEach time this file is saved,\
+      \ GRC will instantiate the first class it finds\nto get ports and parameters\
+      \ of your block. The arguments to __init__  will\nbe the parameters. All of\
+      \ them are required to have default values!\n\"\"\"\n\n\nimport numpy as np\n\
+      from gnuradio import gr\n\nclass integration(gr.decim_block):\n    \"\"\"\n\
+      \    docstring for block integration\n    \"\"\"\n    def __init__(self, vec_length=512,\
+      \ n_integrations=1):\n        gr.decim_block.__init__(self,\n            name=\"\
+      integration\",\n            in_sig=[(np.float32, int(vec_length))],\n      \
+      \      out_sig=[(np.float32, int(vec_length))], \n            decim = n_integrations)\n\
+      \        self.n_integrations = n_integrations\n        self.vec_length = vec_length\n\
+      \        self.set_relative_rate(1.0/n_integrations)\n        self.sum = np.zeros(self.vec_length)\n\
+      \        self.integration_count = 0\n\n\n    def work(self, input_items, output_items):\n\
+      \        in0 = input_items[0]\n        out = output_items[0]\n        for inp0\
+      \ in in0:\n            if self.integration_count < self.n_integrations:\n  \
+      \              self.sum = self.sum + inp0\n                self.integration_count\
+      \ += 1\n            else:\n                out[:] = self.sum[:]/self.n_integrations\n\
+      \                self.sum = np.zeros(self.vec_length)\n                self.integration_count\
+      \ = 0\n        return len(output_items[0])\n\n    def set_n_integrations(self,\
+      \ n_integrations):\n        self.n_integrations = n_integrations\n        self.set_relative_rate(1.0/n_integrations)\n\
+      \        print(\"Rate Updated\")"
+    affinity: ''
+    alias: ''
+    comment: ''
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    n_integrations: int(Frequency/Sample)
+    vec_length: Vector_length
+  states:
+    _io_cache: ('integration', 'integration', [('vec_length', '512'), ('n_integrations',
+      '1')], [('0', 'float', 512)], [('0', 'float', 512)], '\n    docstring for block
+      integration\n    ', ['n_integrations', 'vec_length'])
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [1040, 232.0]
+    rotation: 0
+    state: true
+- name: epy_block_0_0
+  id: epy_block
+  parameters:
+    _source_code: "\"\"\"\nEmbedded Python Blocks:\n\nEach time this file is saved,\
+      \ GRC will instantiate the first class it finds\nto get ports and parameters\
+      \ of your block. The arguments to __init__  will\nbe the parameters. All of\
+      \ them are required to have default values!\n\"\"\"\n\n\nimport numpy as np\n\
+      from gnuradio import gr\n\nclass integration(gr.decim_block):\n    \"\"\"\n\
+      \    docstring for block integration\n    \"\"\"\n    def __init__(self, vec_length=512,\
+      \ n_integrations=1):\n        gr.decim_block.__init__(self,\n            name=\"\
+      integration\",\n            in_sig=[(np.float32, int(vec_length))],\n      \
+      \      out_sig=[(np.float32, int(vec_length))], \n            decim = n_integrations)\n\
+      \        self.n_integrations = n_integrations\n        self.vec_length = vec_length\n\
+      \        self.set_relative_rate(1.0/n_integrations)\n        self.sum = np.zeros(self.vec_length)\n\
+      \        self.integration_count = 0\n\n\n    def work(self, input_items, output_items):\n\
+      \        in0 = input_items[0]\n        out = output_items[0]\n        for inp0\
+      \ in in0:\n            if self.integration_count < self.n_integrations:\n  \
+      \              self.sum = self.sum + inp0\n                self.integration_count\
+      \ += 1\n            else:\n                out[:] = self.sum[:]/self.n_integrations\n\
+      \                self.sum = np.zeros(self.vec_length)\n                self.integration_count\
+      \ = 0\n        return len(output_items[0])\n\n    def set_n_integrations(self,\
+      \ n_integrations):\n        self.n_integrations = n_integrations\n        self.set_relative_rate(1.0/n_integrations)\n\
+      \        print(\"Rate Updated\")"
+    affinity: ''
+    alias: ''
+    comment: ''
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    n_integrations: '21'
+    vec_length: Vector_length
+  states:
+    _io_cache: ('integration', 'integration', [('vec_length', '512'), ('n_integrations',
+      '1')], [('0', 'float', 512)], [('0', 'float', 512)], '\n    docstring for block
+      integration\n    ', ['n_integrations', 'vec_length'])
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [1200.0, 344]
+    rotation: 270
+    state: enabled
+- name: epy_block_1_0
+  id: epy_block
+  parameters:
+    _source_code: "\"\"\"\nEmbedded Python Blocks:\n\nEach time this file is saved,\
+      \ GRC will instantiate the first class it finds\nto get ports and parameters\
+      \ of your block. The arguments to __init__  will\nbe the parameters. All of\
+      \ them are required to have default values!\n\"\"\"\n\nimport numpy as np\n\
+      from gnuradio import gr\nimport time\nfrom datetime import datetime\n\nclass\
+      \ csv_filesink(gr.sync_block):\n    \"\"\"\n    This block is controlled by\
+      \ the string variable save_toggle: if save_toggle = \"True\" (a string, not\
+      \ boolean), the data is written to a new .csv file every new integration time.\
+      \ The minimum integration time for the block to work is 0.1 s. \n    \"\"\"\n\
+      \    def __init__(self, vec_length=512, samp_rate=2400000, freq=610000000, prefix=\"\
+      \", save_toggle=\"True\", integration_select=0, short_long_time_scale=1, az=\"\
+      \", elev=\"\", location=\"\"):\n        gr.sync_block.__init__(self,\n     \
+      \       name=\"csv_filesink\",\n            in_sig=[(np.float32, int(vec_length))],\n\
+      \            out_sig=None)\n\n        self.vec_length = int(vec_length)\n  \
+      \      self.samp_rate = samp_rate\n        self.freq = freq\n        self.prefix\
+      \ = prefix\n        self.save_toggle = save_toggle\n        self.integration_select\
+      \ = integration_select\n        self.short_long_time_scale = short_long_time_scale\n\
+      \        self.az = az\n        self.elev = elev\n        self.location = location\n\
+      \n        self.frequencies = np.arange(freq - samp_rate/2, freq + samp_rate/2,\
+      \ samp_rate/vec_length)[:vec_length]\n        self.data_array = np.zeros((vec_length,2))\n\
+      \        self.N_long_counter = 0\n        self.spectrum = np.zeros(vec_length)\n\
+      \n    def work(self, input_items, output_items):\n        # in0 = input_items[0]\n\
+      \        # self.spectrum[:] = in0\n\n        in0_buffer = input_items[0]\n\n\
+      \        for in0 in in0_buffer:\n\n        # <+signal processing here+>\n\n\
+      \            if self.save_toggle == \"True\":     #If true, capture the spectrum\
+      \ to a new .csv text file each integration.\n                if self.integration_select\
+      \ == 0:\n                    current_time = time.time()\n                  \
+      \  self.timenow = datetime.now().strftime(\"%Y_%m_%d_%H_%M_%S_%f\")[:-5]\n \
+      \                   #write (freq, output) as a column array to a text file,\
+      \ titled e.g. \"2018-07-24_15.15.49_spectrum.txt\"\n                    # The\
+      \ \"prefix\", i.e. the file path, is defined in the prefix variable box in the\
+      \ .grc program.\n                    self.textfilename = self.prefix + self.timenow\
+      \ + \"_PSD.csv\"\n                    self.data_array[:,0] = np.round(self.frequencies/1e6,\
+      \ decimals=4)\n                    self.data_array[:,1] = np.round(in0, decimals=4)\n\
+      \                    np.savetxt(self.textfilename, self.data_array, delimiter=',')\n\
+      \n                    self.N_long_counter = self.N_long_counter + 1  #Increase\
+      \ counter for long integration print to .csv\n\n                else:\n    \
+      \                if self.N_long_counter >= self.short_long_time_scale-1:\n \
+      \                       current_time = time.time()\n                       \
+      \ self.timenow = datetime.now().strftime(\"%Y-%m-%d_%H.%M.%S.%f\")[:-5]\n  \
+      \                      #write (freq, output) as a column array to a text file,\
+      \ titled e.g. \"2018-07-24_15.15.49_spectrum.txt\"\n                       \
+      \ # The \"prefix\", i.e. the file path, is defined in the prefix variable box\
+      \ in the .grc program.\n                        self.textfilename = self.prefix\
+      \ + self.timenow + \"_PSD.csv\"\n                        self.data_array[:,0]\
+      \ = np.round(self.frequencies/1e6, decimals=4)\n                        self.data_array[:,1]\
+      \ = np.round(in0, decimals=4)\n                        np.savetxt(self.textfilename,\
+      \ self.data_array, delimiter=',')\n                        #\n             \
+      \           self.N_long_counter = 0\n                    else:\n           \
+      \             self.N_long_counter = self.N_long_counter + 1  #Increase counter\
+      \ for long integration print to .csv\n            \n            return len(input_items[0])\n\
+      \n    def set_save_toggle(self, save_toggle):\n        self.save_toggle = save_toggle\n\
+      \n    def set_integration_select(self, integration_select):\n        self.integration_select\
+      \ = integration_select\n\n    def set_az(self, az):\n        self.az = az\n\n\
+      \    def set_elev(self, elev):\n        self.elev = elev\n\n    def set_location(self,\
+      \ location):\n        self.location = location"
+    affinity: ''
+    alias: ''
+    az: '""'
+    comment: ''
+    elev: '""'
+    freq: Frequency
+    integration_select: '0'
+    location: '""'
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    prefix: f"{path}/{Datetime}/"
+    samp_rate: Sample
+    save_toggle: '"True"'
+    short_long_time_scale: '0'
+    vec_length: Vector_length
+  states:
+    _io_cache: '(''csv_filesink'', ''csv_filesink'', [(''vec_length'', ''512''), (''samp_rate'',
+      ''2400000''), (''freq'', ''610000000''), (''prefix'', "''''"), (''save_toggle'',
+      "''True''"), (''integration_select'', ''0''), (''short_long_time_scale'', ''1''),
+      (''az'', "''''"), (''elev'', "''''"), (''location'', "''''")], [(''0'', ''float'',
+      512)], [], ''\n    This block is controlled by the string variable save_toggle:
+      if save_toggle = "True" (a string, not boolean), the data is written to a new
+      .csv file every new integration time. The minimum integration time for the block
+      to work is 0.1 s. \n    '', [''az'', ''elev'', ''freq'', ''integration_select'',
+      ''location'', ''prefix'', ''samp_rate'', ''save_toggle'', ''short_long_time_scale'',
+      ''vec_length''])'
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [1344, 416.0]
+    rotation: 0
+    state: enabled
+- name: import_0_0
+  id: import
+  parameters:
+    alias: ''
+    comment: ''
+    imports: from datetime import datetime
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [248, 136.0]
+    rotation: 0
+    state: true
+- name: osmosdr_source_0
+  id: osmosdr_source
+  parameters:
+    affinity: ''
+    alias: ''
+    ant0: ''
+    ant1: ''
+    ant10: ''
+    ant11: ''
+    ant12: ''
+    ant13: ''
+    ant14: ''
+    ant15: ''
+    ant16: ''
+    ant17: ''
+    ant18: ''
+    ant19: ''
+    ant2: ''
+    ant20: ''
+    ant21: ''
+    ant22: ''
+    ant23: ''
+    ant24: ''
+    ant25: ''
+    ant26: ''
+    ant27: ''
+    ant28: ''
+    ant29: ''
+    ant3: ''
+    ant30: ''
+    ant31: ''
+    ant4: ''
+    ant5: ''
+    ant6: ''
+    ant7: ''
+    ant8: ''
+    ant9: ''
+    args: '""'
+    bb_gain0: '0'
+    bb_gain1: '20'
+    bb_gain10: '20'
+    bb_gain11: '20'
+    bb_gain12: '20'
+    bb_gain13: '20'
+    bb_gain14: '20'
+    bb_gain15: '20'
+    bb_gain16: '20'
+    bb_gain17: '20'
+    bb_gain18: '20'
+    bb_gain19: '20'
+    bb_gain2: '20'
+    bb_gain20: '20'
+    bb_gain21: '20'
+    bb_gain22: '20'
+    bb_gain23: '20'
+    bb_gain24: '20'
+    bb_gain25: '20'
+    bb_gain26: '20'
+    bb_gain27: '20'
+    bb_gain28: '20'
+    bb_gain29: '20'
+    bb_gain3: '20'
+    bb_gain30: '20'
+    bb_gain31: '20'
+    bb_gain4: '20'
+    bb_gain5: '20'
+    bb_gain6: '20'
+    bb_gain7: '20'
+    bb_gain8: '20'
+    bb_gain9: '20'
+    bw0: '0'
+    bw1: '0'
+    bw10: '0'
+    bw11: '0'
+    bw12: '0'
+    bw13: '0'
+    bw14: '0'
+    bw15: '0'
+    bw16: '0'
+    bw17: '0'
+    bw18: '0'
+    bw19: '0'
+    bw2: '0'
+    bw20: '0'
+    bw21: '0'
+    bw22: '0'
+    bw23: '0'
+    bw24: '0'
+    bw25: '0'
+    bw26: '0'
+    bw27: '0'
+    bw28: '0'
+    bw29: '0'
+    bw3: '0'
+    bw30: '0'
+    bw31: '0'
+    bw4: '0'
+    bw5: '0'
+    bw6: '0'
+    bw7: '0'
+    bw8: '0'
+    bw9: '0'
+    clock_source0: ''
+    clock_source1: ''
+    clock_source2: ''
+    clock_source3: ''
+    clock_source4: ''
+    clock_source5: ''
+    clock_source6: ''
+    clock_source7: ''
+    comment: ''
+    corr0: '0'
+    corr1: '0'
+    corr10: '0'
+    corr11: '0'
+    corr12: '0'
+    corr13: '0'
+    corr14: '0'
+    corr15: '0'
+    corr16: '0'
+    corr17: '0'
+    corr18: '0'
+    corr19: '0'
+    corr2: '0'
+    corr20: '0'
+    corr21: '0'
+    corr22: '0'
+    corr23: '0'
+    corr24: '0'
+    corr25: '0'
+    corr26: '0'
+    corr27: '0'
+    corr28: '0'
+    corr29: '0'
+    corr3: '0'
+    corr30: '0'
+    corr31: '0'
+    corr4: '0'
+    corr5: '0'
+    corr6: '0'
+    corr7: '0'
+    corr8: '0'
+    corr9: '0'
+    dc_offset_mode0: '0'
+    dc_offset_mode1: '0'
+    dc_offset_mode10: '0'
+    dc_offset_mode11: '0'
+    dc_offset_mode12: '0'
+    dc_offset_mode13: '0'
+    dc_offset_mode14: '0'
+    dc_offset_mode15: '0'
+    dc_offset_mode16: '0'
+    dc_offset_mode17: '0'
+    dc_offset_mode18: '0'
+    dc_offset_mode19: '0'
+    dc_offset_mode2: '0'
+    dc_offset_mode20: '0'
+    dc_offset_mode21: '0'
+    dc_offset_mode22: '0'
+    dc_offset_mode23: '0'
+    dc_offset_mode24: '0'
+    dc_offset_mode25: '0'
+    dc_offset_mode26: '0'
+    dc_offset_mode27: '0'
+    dc_offset_mode28: '0'
+    dc_offset_mode29: '0'
+    dc_offset_mode3: '0'
+    dc_offset_mode30: '0'
+    dc_offset_mode31: '0'
+    dc_offset_mode4: '0'
+    dc_offset_mode5: '0'
+    dc_offset_mode6: '0'
+    dc_offset_mode7: '0'
+    dc_offset_mode8: '0'
+    dc_offset_mode9: '0'
+    freq0: Frequency
+    freq1: 100e6
+    freq10: 100e6
+    freq11: 100e6
+    freq12: 100e6
+    freq13: 100e6
+    freq14: 100e6
+    freq15: 100e6
+    freq16: 100e6
+    freq17: 100e6
+    freq18: 100e6
+    freq19: 100e6
+    freq2: 100e6
+    freq20: 100e6
+    freq21: 100e6
+    freq22: 100e6
+    freq23: 100e6
+    freq24: 100e6
+    freq25: 100e6
+    freq26: 100e6
+    freq27: 100e6
+    freq28: 100e6
+    freq29: 100e6
+    freq3: 100e6
+    freq30: 100e6
+    freq31: 100e6
+    freq4: 100e6
+    freq5: 100e6
+    freq6: 100e6
+    freq7: 100e6
+    freq8: 100e6
+    freq9: 100e6
+    gain0: '40'
+    gain1: '10'
+    gain10: '10'
+    gain11: '10'
+    gain12: '10'
+    gain13: '10'
+    gain14: '10'
+    gain15: '10'
+    gain16: '10'
+    gain17: '10'
+    gain18: '10'
+    gain19: '10'
+    gain2: '10'
+    gain20: '10'
+    gain21: '10'
+    gain22: '10'
+    gain23: '10'
+    gain24: '10'
+    gain25: '10'
+    gain26: '10'
+    gain27: '10'
+    gain28: '10'
+    gain29: '10'
+    gain3: '10'
+    gain30: '10'
+    gain31: '10'
+    gain4: '10'
+    gain5: '10'
+    gain6: '10'
+    gain7: '10'
+    gain8: '10'
+    gain9: '10'
+    gain_mode0: 'True'
+    gain_mode1: 'False'
+    gain_mode10: 'False'
+    gain_mode11: 'False'
+    gain_mode12: 'False'
+    gain_mode13: 'False'
+    gain_mode14: 'False'
+    gain_mode15: 'False'
+    gain_mode16: 'False'
+    gain_mode17: 'False'
+    gain_mode18: 'False'
+    gain_mode19: 'False'
+    gain_mode2: 'False'
+    gain_mode20: 'False'
+    gain_mode21: 'False'
+    gain_mode22: 'False'
+    gain_mode23: 'False'
+    gain_mode24: 'False'
+    gain_mode25: 'False'
+    gain_mode26: 'False'
+    gain_mode27: 'False'
+    gain_mode28: 'False'
+    gain_mode29: 'False'
+    gain_mode3: 'False'
+    gain_mode30: 'False'
+    gain_mode31: 'False'
+    gain_mode4: 'False'
+    gain_mode5: 'False'
+    gain_mode6: 'False'
+    gain_mode7: 'False'
+    gain_mode8: 'False'
+    gain_mode9: 'False'
+    if_gain0: '0'
+    if_gain1: '20'
+    if_gain10: '20'
+    if_gain11: '20'
+    if_gain12: '20'
+    if_gain13: '20'
+    if_gain14: '20'
+    if_gain15: '20'
+    if_gain16: '20'
+    if_gain17: '20'
+    if_gain18: '20'
+    if_gain19: '20'
+    if_gain2: '20'
+    if_gain20: '20'
+    if_gain21: '20'
+    if_gain22: '20'
+    if_gain23: '20'
+    if_gain24: '20'
+    if_gain25: '20'
+    if_gain26: '20'
+    if_gain27: '20'
+    if_gain28: '20'
+    if_gain29: '20'
+    if_gain3: '20'
+    if_gain30: '20'
+    if_gain31: '20'
+    if_gain4: '20'
+    if_gain5: '20'
+    if_gain6: '20'
+    if_gain7: '20'
+    if_gain8: '20'
+    if_gain9: '20'
+    iq_balance_mode0: '0'
+    iq_balance_mode1: '0'
+    iq_balance_mode10: '0'
+    iq_balance_mode11: '0'
+    iq_balance_mode12: '0'
+    iq_balance_mode13: '0'
+    iq_balance_mode14: '0'
+    iq_balance_mode15: '0'
+    iq_balance_mode16: '0'
+    iq_balance_mode17: '0'
+    iq_balance_mode18: '0'
+    iq_balance_mode19: '0'
+    iq_balance_mode2: '0'
+    iq_balance_mode20: '0'
+    iq_balance_mode21: '0'
+    iq_balance_mode22: '0'
+    iq_balance_mode23: '0'
+    iq_balance_mode24: '0'
+    iq_balance_mode25: '0'
+    iq_balance_mode26: '0'
+    iq_balance_mode27: '0'
+    iq_balance_mode28: '0'
+    iq_balance_mode29: '0'
+    iq_balance_mode3: '0'
+    iq_balance_mode30: '0'
+    iq_balance_mode31: '0'
+    iq_balance_mode4: '0'
+    iq_balance_mode5: '0'
+    iq_balance_mode6: '0'
+    iq_balance_mode7: '0'
+    iq_balance_mode8: '0'
+    iq_balance_mode9: '0'
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    nchan: '1'
+    num_mboards: '1'
+    sample_rate: Sample
+    sync: sync
+    time_source0: ''
+    time_source1: ''
+    time_source2: ''
+    time_source3: ''
+    time_source4: ''
+    time_source5: ''
+    time_source6: ''
+    time_source7: ''
+    type: fc32
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [72, 260.0]
+    rotation: 0
+    state: true
+- name: qtgui_vector_sink_f_0
+  id: qtgui_vector_sink_f
+  parameters:
+    affinity: ''
+    alias: ''
+    alpha1: '1.0'
+    alpha10: '1.0'
+    alpha2: '1.0'
+    alpha3: '1.0'
+    alpha4: '1.0'
+    alpha5: '1.0'
+    alpha6: '1.0'
+    alpha7: '1.0'
+    alpha8: '1.0'
+    alpha9: '1.0'
+    autoscale: 'True'
+    average: '0.1'
+    color1: '"blue"'
+    color10: '"dark blue"'
+    color2: '"red"'
+    color3: '"green"'
+    color4: '"black"'
+    color5: '"cyan"'
+    color6: '"magenta"'
+    color7: '"yellow"'
+    color8: '"dark red"'
+    color9: '"dark green"'
+    comment: ''
+    grid: 'True'
+    gui_hint: ''
+    label1: ''
+    label10: ''
+    label2: ''
+    label3: ''
+    label4: ''
+    label5: ''
+    label6: ''
+    label7: ''
+    label8: ''
+    label9: ''
+    legend: 'True'
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    name: '"PSD"'
+    nconnections: '1'
+    ref_level: '0'
+    showports: 'False'
+    update_time: '2'
+    vlen: Vector_length
+    width1: '1'
+    width10: '1'
+    width2: '1'
+    width3: '1'
+    width4: '1'
+    width5: '1'
+    width6: '1'
+    width7: '1'
+    width8: '1'
+    width9: '1'
+    x_axis_label: '"Frequency"'
+    x_start: Frequency-Sample/2
+    x_step: int(Sample/Vector_length)
+    x_units: '"MHz"'
+    y_axis_label: '"Power"'
+    y_units: '"dB"'
+    ymax: '10'
+    ymin: '-140'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [1344, 104.0]
+    rotation: 0
+    state: disabled
+
+connections:
+- [blocks_complex_to_mag_squared_0, '0', blocks_moving_average_xx_0, '0']
+- [blocks_moving_average_xx_0, '0', blocks_nlog10_ff_0, '0']
+- [blocks_nlog10_ff_0, '0', epy_block_0, '0']
+- [blocks_stream_to_vector_0, '0', blocks_complex_to_mag_squared_0, '0']
+- [epy_block_0, '0', epy_block_0_0, '0']
+- [epy_block_0, '0', qtgui_vector_sink_f_0, '0']
+- [epy_block_0_0, '0', epy_block_1_0, '0']
+- [osmosdr_source_0, '0', blocks_stream_to_vector_0, '0']
+
+metadata:
+  file_format: 1
+  grc_version: 3.10.8.0
