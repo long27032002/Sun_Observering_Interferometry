@@ -1,0 +1,474 @@
+options:
+  parameters:
+    author: ''
+    catch_exceptions: 'True'
+    category: '[GRC Hier Blocks]'
+    cmake_opt: ''
+    comment: ''
+    copyright: ''
+    description: ''
+    gen_cmake: 'On'
+    gen_linking: dynamic
+    generate_options: qt_gui
+    hier_block_src_path: '.:'
+    id: dlite
+    max_nouts: '0'
+    output_language: python
+    placement: (0,0)
+    qt_qss_theme: ''
+    realtime_scheduling: ''
+    run: 'True'
+    run_command: '{python} -u {filename}'
+    run_options: prompt
+    sizing_mode: fixed
+    thread_safe_setters: ''
+    title: Not titled yet
+    window_size: (1000,1000)
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [8, 8]
+    rotation: 0
+    state: enabled
+
+blocks:
+- name: Datetime
+  id: variable
+  parameters:
+    comment: ''
+    value: datetime.now().strftime("%Y_%m_%d")
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [1152, 116.0]
+    rotation: 0
+    state: true
+- name: frequency
+  id: variable
+  parameters:
+    comment: ''
+    value: '35000000'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [528, 116.0]
+    rotation: 0
+    state: enabled
+- name: path
+  id: variable
+  parameters:
+    comment: ''
+    value: '"/home/RadioAstronomy/Desktop/dlite/data/"'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [632, 116.0]
+    rotation: 0
+    state: enabled
+- name: sample_rate
+  id: variable
+  parameters:
+    comment: ''
+    value: '8000000'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [288, 116.0]
+    rotation: 0
+    state: enabled
+- name: timenow
+  id: variable
+  parameters:
+    comment: ''
+    value: datetime.now().strftime("%Y_%m_%d_%H_%M_%S")
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [960, 116.0]
+    rotation: 0
+    state: true
+- name: vector_length
+  id: variable
+  parameters:
+    comment: ''
+    value: '512'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [408, 116.0]
+    rotation: 0
+    state: enabled
+- name: blocks_complex_to_real_0
+  id: blocks_complex_to_real
+  parameters:
+    affinity: ''
+    alias: ''
+    comment: ''
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    vlen: vector_length
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [1144, 236.0]
+    rotation: 0
+    state: true
+- name: blocks_multiply_conjugate_cc_0
+  id: blocks_multiply_conjugate_cc
+  parameters:
+    affinity: ''
+    alias: ''
+    comment: ''
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    vlen: vector_length
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [936, 224.0]
+    rotation: 0
+    state: true
+- name: blocks_nlog10_ff_0
+  id: blocks_nlog10_ff
+  parameters:
+    affinity: ''
+    alias: ''
+    comment: ''
+    k: '0'
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    n: '10'
+    vlen: vector_length
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [1236.0, 344]
+    rotation: 270
+    state: enabled
+- name: blocks_stream_to_vector_0
+  id: blocks_stream_to_vector
+  parameters:
+    affinity: ''
+    alias: ''
+    comment: ''
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    num_items: vector_length
+    type: complex
+    vlen: '1'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [488, 200.0]
+    rotation: 0
+    state: enabled
+- name: epy_block_0
+  id: epy_block
+  parameters:
+    _source_code: "\"\"\"\nEmbedded Python Blocks:\n\nEach time this file is saved,\
+      \ GRC will instantiate the first class it finds\nto get ports and parameters\
+      \ of your block. The arguments to __init__  will\nbe the parameters. All of\
+      \ them are required to have default values!\n\"\"\"\n\n\nimport numpy as np\n\
+      from gnuradio import gr\n\nclass integration(gr.decim_block):\n    \"\"\"\n\
+      \    docstring for block integration\n    \"\"\"\n    def __init__(self, vec_length=512,\
+      \ n_integrations=1):\n        gr.decim_block.__init__(self,\n            name=\"\
+      integration\",\n            in_sig=[(np.float32, int(vec_length))],\n      \
+      \      out_sig=[(np.float32, int(vec_length))], \n            decim = n_integrations)\n\
+      \        self.n_integrations = n_integrations\n        self.vec_length = vec_length\n\
+      \        self.set_relative_rate(1.0/n_integrations)\n        self.sum = np.zeros(self.vec_length)\n\
+      \        self.integration_count = 0\n\n\n    def work(self, input_items, output_items):\n\
+      \        in0 = input_items[0]\n        out = output_items[0]\n        for inp0\
+      \ in in0:\n            if self.integration_count < self.n_integrations:\n  \
+      \              self.sum = self.sum + inp0\n                self.integration_count\
+      \ += 1\n            else:\n                out[:] = self.sum[:]/self.n_integrations\n\
+      \                self.sum = np.zeros(self.vec_length)\n                self.integration_count\
+      \ = 0\n        return len(output_items[0])\n\n    def set_n_integrations(self,\
+      \ n_integrations):\n        self.n_integrations = n_integrations\n        self.set_relative_rate(1.0/n_integrations)\n\
+      \        print(\"Rate Updated\")"
+    affinity: ''
+    alias: ''
+    comment: ''
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    n_integrations: vector_length
+    vec_length: vector_length
+  states:
+    _io_cache: ('integration', 'integration', [('vec_length', '512'), ('n_integrations',
+      '1')], [('0', 'float', 512)], [('0', 'float', 512)], '\n    docstring for block
+      integration\n    ', ['n_integrations', 'vec_length'])
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [1008, 420.0]
+    rotation: 180
+    state: true
+- name: epy_block_0_0
+  id: epy_block
+  parameters:
+    _source_code: "\"\"\"\nEmbedded Python Blocks:\n\nEach time this file is saved,\
+      \ GRC will instantiate the first class it finds\nto get ports and parameters\
+      \ of your block. The arguments to __init__  will\nbe the parameters. All of\
+      \ them are required to have default values!\n\"\"\"\n\n\nimport numpy as np\n\
+      from gnuradio import gr\n\nclass integration(gr.decim_block):\n    \"\"\"\n\
+      \    docstring for block integration\n    \"\"\"\n    def __init__(self, vec_length=512,\
+      \ n_integrations=1):\n        gr.decim_block.__init__(self,\n            name=\"\
+      integration\",\n            in_sig=[(np.float32, int(vec_length))],\n      \
+      \      out_sig=[(np.float32, int(vec_length))], \n            decim = n_integrations)\n\
+      \        self.n_integrations = n_integrations\n        self.vec_length = vec_length\n\
+      \        self.set_relative_rate(1.0/n_integrations)\n        self.sum = np.zeros(self.vec_length)\n\
+      \        self.integration_count = 0\n\n\n    def work(self, input_items, output_items):\n\
+      \        in0 = input_items[0]\n        out = output_items[0]\n        for inp0\
+      \ in in0:\n            if self.integration_count < self.n_integrations:\n  \
+      \              self.sum = self.sum + inp0\n                self.integration_count\
+      \ += 1\n            else:\n                out[:] = self.sum[:]/self.n_integrations\n\
+      \                self.sum = np.zeros(self.vec_length)\n                self.integration_count\
+      \ = 0\n        return len(output_items[0])\n\n    def set_n_integrations(self,\
+      \ n_integrations):\n        self.n_integrations = n_integrations\n        self.set_relative_rate(1.0/n_integrations)\n\
+      \        print(\"Rate Updated\")"
+    affinity: ''
+    alias: ''
+    comment: ''
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    n_integrations: '32'
+    vec_length: vector_length
+  states:
+    _io_cache: ('integration', 'integration', [('vec_length', '512'), ('n_integrations',
+      '1')], [('0', 'float', 512)], [('0', 'float', 512)], '\n    docstring for block
+      integration\n    ', ['n_integrations', 'vec_length'])
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [816, 420.0]
+    rotation: 180
+    state: enabled
+- name: epy_block_0_0_0
+  id: epy_block
+  parameters:
+    _source_code: "\"\"\"\nEmbedded Python Blocks:\n\nEach time this file is saved,\
+      \ GRC will instantiate the first class it finds\nto get ports and parameters\
+      \ of your block. The arguments to __init__  will\nbe the parameters. All of\
+      \ them are required to have default values!\n\"\"\"\n\n\nimport numpy as np\n\
+      from gnuradio import gr\n\nclass integration(gr.decim_block):\n    \"\"\"\n\
+      \    docstring for block integration\n    \"\"\"\n    def __init__(self, vec_length=512,\
+      \ n_integrations=1):\n        gr.decim_block.__init__(self,\n            name=\"\
+      integration\",\n            in_sig=[(np.float32, int(vec_length))],\n      \
+      \      out_sig=[(np.float32, int(vec_length))], \n            decim = n_integrations)\n\
+      \        self.n_integrations = n_integrations\n        self.vec_length = vec_length\n\
+      \        self.set_relative_rate(1.0/n_integrations)\n        self.sum = np.zeros(self.vec_length)\n\
+      \        self.integration_count = 0\n\n\n    def work(self, input_items, output_items):\n\
+      \        in0 = input_items[0]\n        out = output_items[0]\n        for inp0\
+      \ in in0:\n            if self.integration_count < self.n_integrations:\n  \
+      \              self.sum = self.sum + inp0\n                self.integration_count\
+      \ += 1\n            else:\n                out[:] = self.sum[:]/self.n_integrations\n\
+      \                self.sum = np.zeros(self.vec_length)\n                self.integration_count\
+      \ = 0\n        return len(output_items[0])\n\n    def set_n_integrations(self,\
+      \ n_integrations):\n        self.n_integrations = n_integrations\n        self.set_relative_rate(1.0/n_integrations)\n\
+      \        print(\"Rate Updated\")"
+    affinity: ''
+    alias: ''
+    comment: ''
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    n_integrations: '10'
+    vec_length: vector_length
+  states:
+    _io_cache: ('integration', 'integration', [('vec_length', '512'), ('n_integrations',
+      '1')], [('0', 'float', 512)], [('0', 'float', 512)], '\n    docstring for block
+      integration\n    ', ['n_integrations', 'vec_length'])
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [616, 420.0]
+    rotation: 180
+    state: enabled
+- name: epy_block_1_0
+  id: epy_block
+  parameters:
+    _source_code: "\"\"\"\nEmbedded Python Blocks:\n\nEach time this file is saved,\
+      \ GRC will instantiate the first class it finds\nto get ports and parameters\
+      \ of your block. The arguments to __init__  will\nbe the parameters. All of\
+      \ them are required to have default values!\n\"\"\"\n\nimport numpy as np\n\
+      from gnuradio import gr\nimport time\nfrom datetime import datetime\n\nclass\
+      \ csv_filesink(gr.sync_block):\n    \"\"\"\n    This block is controlled by\
+      \ the string variable save_toggle: if save_toggle = \"True\" (a string, not\
+      \ boolean), the data is written to a new .csv file every new integration time.\
+      \ The minimum integration time for the block to work is 0.1 s. \n    \"\"\"\n\
+      \    def __init__(self, vec_length=512, samp_rate=2400000, freq=610000000, prefix=\"\
+      \", save_toggle=\"True\", integration_select=0, short_long_time_scale=1, az=\"\
+      \", elev=\"\", location=\"\"):\n        gr.sync_block.__init__(self,\n     \
+      \       name=\"csv_filesink\",\n            in_sig=[(np.float32, int(vec_length))],\n\
+      \            out_sig=None)\n\n        self.vec_length = int(vec_length)\n  \
+      \      self.samp_rate = samp_rate\n        self.freq = freq\n        self.prefix\
+      \ = prefix\n        self.save_toggle = save_toggle\n        self.integration_select\
+      \ = integration_select\n        self.short_long_time_scale = short_long_time_scale\n\
+      \        self.az = az\n        self.elev = elev\n        self.location = location\n\
+      \n        self.frequencies = np.arange(freq - samp_rate/2, freq + samp_rate/2,\
+      \ samp_rate/vec_length)[:vec_length]\n        self.data_array = np.zeros((vec_length,2))\n\
+      \        self.N_long_counter = 0\n        self.spectrum = np.zeros(vec_length)\n\
+      \n    def work(self, input_items, output_items):\n        # in0 = input_items[0]\n\
+      \        # self.spectrum[:] = in0\n\n        in0_buffer = input_items[0]\n\n\
+      \        for in0 in in0_buffer:\n\n        # <+signal processing here+>\n\n\
+      \            if self.save_toggle == \"True\":     #If true, capture the spectrum\
+      \ to a new .csv text file each integration.\n                if self.integration_select\
+      \ == 0:\n                    current_time = time.time()\n                  \
+      \  self.timenow = datetime.now().strftime(\"%Y_%m_%d_%H_%M_%S_%f\")[:-5]\n \
+      \                   #write (freq, output) as a column array to a text file,\
+      \ titled e.g. \"2018-07-24_15.15.49_spectrum.txt\"\n                    # The\
+      \ \"prefix\", i.e. the file path, is defined in the prefix variable box in the\
+      \ .grc program.\n                    self.textfilename = self.prefix + datetime.now().strftime(\"\
+      %Y_%m_%d\") + \"/\" + self.timenow + \"_PSD.csv\"\n                    self.data_array[:,0]\
+      \ = np.round(self.frequencies/1e6, decimals=4)\n                    self.data_array[:,1]\
+      \ = np.round(in0, decimals=4)\n                    np.savetxt(self.textfilename,\
+      \ self.data_array, delimiter=',')\n\n                    self.N_long_counter\
+      \ = self.N_long_counter + 1  #Increase counter for long integration print to\
+      \ .csv\n\n                else:\n                    if self.N_long_counter\
+      \ >= self.short_long_time_scale-1:\n                        current_time = time.time()\n\
+      \                        self.timenow = datetime.now().strftime(\"%Y-%m-%d_%H.%M.%S.%f\"\
+      )[:-5]\n                        #write (freq, output) as a column array to a\
+      \ text file, titled e.g. \"2018-07-24_15.15.49_spectrum.txt\"\n            \
+      \            # The \"prefix\", i.e. the file path, is defined in the prefix\
+      \ variable box in the .grc program.\n                        self.textfilename\
+      \ = self.prefix + self.timenow + \"_PSD.csv\"\n                        self.data_array[:,0]\
+      \ = np.round(self.frequencies/1e6, decimals=4)\n                        self.data_array[:,1]\
+      \ = np.round(in0, decimals=4)\n                        np.savetxt(self.textfilename,\
+      \ self.data_array, delimiter=',')\n                        #\n             \
+      \           self.N_long_counter = 0\n                    else:\n           \
+      \             self.N_long_counter = self.N_long_counter + 1  #Increase counter\
+      \ for long integration print to .csv\n            \n            return len(input_items[0])\n\
+      \n    def set_save_toggle(self, save_toggle):\n        self.save_toggle = save_toggle\n\
+      \n    def set_integration_select(self, integration_select):\n        self.integration_select\
+      \ = integration_select\n\n    def set_az(self, az):\n        self.az = az\n\n\
+      \    def set_elev(self, elev):\n        self.elev = elev\n\n    def set_location(self,\
+      \ location):\n        self.location = location"
+    affinity: ''
+    alias: ''
+    az: '""'
+    comment: ''
+    elev: '""'
+    freq: frequency
+    integration_select: '0'
+    location: '""'
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    prefix: path
+    samp_rate: sample_rate
+    save_toggle: '"True"'
+    short_long_time_scale: '0'
+    vec_length: vector_length
+  states:
+    _io_cache: '(''csv_filesink'', ''csv_filesink'', [(''vec_length'', ''512''), (''samp_rate'',
+      ''2400000''), (''freq'', ''610000000''), (''prefix'', "''''"), (''save_toggle'',
+      "''True''"), (''integration_select'', ''0''), (''short_long_time_scale'', ''1''),
+      (''az'', "''''"), (''elev'', "''''"), (''location'', "''''")], [(''0'', ''float'',
+      512)], [], ''\n    This block is controlled by the string variable save_toggle:
+      if save_toggle = "True" (a string, not boolean), the data is written to a new
+      .csv file every new integration time. The minimum integration time for the block
+      to work is 0.1 s. \n    '', [''az'', ''elev'', ''freq'', ''integration_select'',
+      ''location'', ''prefix'', ''samp_rate'', ''save_toggle'', ''short_long_time_scale'',
+      ''vec_length''])'
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [312, 348.0]
+    rotation: 180
+    state: enabled
+- name: fft_vxx_0
+  id: fft_vxx
+  parameters:
+    affinity: ''
+    alias: ''
+    comment: ''
+    fft_size: vector_length
+    forward: 'True'
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    nthreads: '1'
+    shift: 'True'
+    type: complex
+    window: window.blackmanharris(vector_length)
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [656, 204.0]
+    rotation: 0
+    state: enabled
+- name: import_0_0
+  id: import
+  parameters:
+    alias: ''
+    comment: ''
+    imports: from datetime import datetime
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [824, 124.0]
+    rotation: 0
+    state: true
+- name: sdrplay3_rspdxr2_0
+  id: sdrplay3_rspdxr2
+  parameters:
+    AGC: 'True'
+    affinity: ''
+    agc_set_point: '20'
+    alias: ''
+    antenna: Antenna B
+    bandwidth: 8000e3
+    biasT: 'False'
+    center_freq: frequency
+    comment: ''
+    dab_notch_filter: 'False'
+    dc_offset_mode: 'False'
+    debug_mode: 'False'
+    freq_corr: '0'
+    hdr_mode: 'False'
+    if_gRdB: '0'
+    iq_balance_mode: 'False'
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    output_type: fc32
+    rf_gRLNA: '0'
+    rf_gR_mode: dB
+    rf_gRdB: '0'
+    rf_notch_filter: 'False'
+    rsp_selector: 24020B8B70
+    sample_rate: sample_rate
+    sample_sequence_gaps_check: 'False'
+    show_gain_changes: 'False'
+    synchronous_updates: 'False'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [288, 196.0]
+    rotation: 0
+    state: true
+
+connections:
+- [blocks_complex_to_real_0, '0', blocks_nlog10_ff_0, '0']
+- [blocks_multiply_conjugate_cc_0, '0', blocks_complex_to_real_0, '0']
+- [blocks_nlog10_ff_0, '0', epy_block_0, '0']
+- [blocks_stream_to_vector_0, '0', fft_vxx_0, '0']
+- [epy_block_0, '0', epy_block_0_0, '0']
+- [epy_block_0_0, '0', epy_block_0_0_0, '0']
+- [epy_block_0_0_0, '0', epy_block_1_0, '0']
+- [fft_vxx_0, '0', blocks_multiply_conjugate_cc_0, '0']
+- [fft_vxx_0, '0', blocks_multiply_conjugate_cc_0, '1']
+- [sdrplay3_rspdxr2_0, '0', blocks_stream_to_vector_0, '0']
+
+metadata:
+  file_format: 1
+  grc_version: 3.10.9.0-rc1
